@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './register.css';
 import axios from 'axios';
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 interface RegisterProps {
   onRegister: (username: string, password: string) => void;
@@ -10,25 +10,57 @@ interface RegisterProps {
 const Register: React.FC<RegisterProps> = ({ onRegister }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const navigate = useNavigate();
-
   const handleRegister = async () => {
+    // Reset previous errors
+    setUsernameError('');
+    setPasswordError('');
+  
+    // Basic validation
+    if (!username.trim()) {
+      setUsernameError('Username is required');
+      return;
+    }
+  
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      return;
+    }
+  
+    if (password.length < 8) { // Adjust the minimum character requirement as needed
+      setPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+  
     try {
+
       const response = await axios.post('http://localhost:8080/register', {
         username,
         password,
       });
-      console.log(response.data); 
- 
-      navigate("/login");
+  
+  
+  
+      navigate('/login');
+    } catch (error:any) {
 
-    } catch (error) {
-      console.error('Registration error:', error);
+      console.log('Registration error:', error.response);
+  
+      if (error) {
+        const errorMessage = error.response.data.error;
+  
+        // Check for duplicate username error
+        if (errorMessage.includes('Username already taken')) {
+          setUsernameError('Username already exists');
+        }
+      } else {
+        
+      }
     }
-
   };
-
-
+  
   return (
     <div className="register-container">
       <h2>Register</h2>
@@ -42,6 +74,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
+          {usernameError && <p className="error-message">{usernameError}</p>}
         </div>
         <div className="form-group">
           <label htmlFor="password">Password:</label>
@@ -52,8 +85,13 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {passwordError && <p className="error-message">{passwordError}</p>}
         </div>
-        <button type="button" className="btn btn-danger" onClick={handleRegister}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={handleRegister}
+        >
           Register
         </button>
       </form>
